@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pneumonia Detection AI</title>
+  <style>
+    :root {
+      --navy: #071a32;
+      --navy-2: #0c2748;
+      --blue: #1676ed;
+      --cyan: #08c5d5;
+      --ink: #10294d;
+      --muted: #58739b;
+      --line: #dce9fa;
+      --panel: rgba(255,255,255,.92);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink); background: #edf5ff;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 235px minmax(0,1fr); }
+    .sidebar {
+      background: linear-gradient(180deg, #06162b, #0b2748 70%, #06172d);
+      color: #eaf4ff; padding: 26px 18px; display: flex; flex-direction: column; gap: 34px;
+    }
+    .brand { display:flex; align-items:center; gap:12px; padding: 0 8px; font-weight:800; line-height:1.25; font-size:18px; }
+    .brand-mark { width:48px; height:48px; border-radius:15px; display:grid; place-items:center; color:#21d7e5; font-size:27px; background:#123a60; border:1px solid #1b6384; }
+    .brand span em { color:#24c5ee; font-style:normal; display:block; }
+    .nav { display:grid; gap:9px; }
+    .nav a { color:#c9d9ed; text-decoration:none; padding:14px 15px; border-radius:12px; display:flex; align-items:center; gap:13px; font-size:14px; transition:.2s; }
+    .nav a:hover, .nav a.active { color:#fff; background:linear-gradient(100deg,#174d86,#123764); }
+    .nav .ico { width:21px; text-align:center; font-size:19px; }
+    .side-note { margin-top:auto; padding:16px 10px; color:#b4c9e2; font-size:12px; line-height:1.6; border-top:1px solid #24415e; }
+    .side-note strong { color:#f2f8ff; display:block; font-size:14px; margin-bottom:5px; }
+    .main { min-width:0; padding:0 28px 24px; }
+    .topbar { height:76px; display:flex; justify-content:flex-end; align-items:center; gap:18px; color:#5e7697; }
+    .status { display:flex; align-items:center; gap:8px; font-size:13px; }
+    .dot { width:8px; height:8px; background:#16cbb8; border-radius:50%; box-shadow:0 0 0 4px #d7f7f3; }
+    .avatar { width:34px; height:34px; border-radius:50%; background:#dceaff; display:grid; place-items:center; font-size:17px; }
+    .hero {
+      position:relative; overflow:hidden; min-height:245px; border:1px solid #d5e7ff; border-radius:22px;
+      padding:34px 38px; display:flex; align-items:center; justify-content:space-between; gap:20px;
+      background: radial-gradient(circle at 78% 45%, rgba(43,173,231,.28), transparent 27%), linear-gradient(110deg,#fff 10%,#f4f9ff 58%,#dceeff);
+      box-shadow:0 12px 35px rgba(31,83,139,.07);
+    }
+    .hero-copy { position:relative; z-index:1; max-width:650px; }
+    .eyebrow { color:#2864a8; letter-spacing:2.4px; font-size:11px; font-weight:800; }
+    h1 { margin:10px 0 12px; font-size:clamp(28px,3.3vw,44px); line-height:1.1; letter-spacing:-1.3px; color:#102849; }
+    h1 span { color:#1686ee; }
+    .hero p { color:#526f96; line-height:1.65; margin:0; max-width:570px; font-size:15px; }
+    .hero-points { display:flex; flex-wrap:wrap; gap:22px; margin-top:22px; }
+    .point { display:flex; align-items:center; gap:9px; font-size:12px; color:#294c79; }
+    .point b { display:block; color:#17375f; font-size:12px; margin-bottom:3px; }
+    .point-icon { width:35px; height:35px; display:grid; place-items:center; border-radius:50%; background:#e2efff; font-size:18px; }
+    .lung-art { flex:0 0 245px; text-align:center; filter:drop-shadow(0 8px 14px #74bce866); opacity:.95; }\n    .lungs-svg { width:100%; max-width:245px; height:auto; display:block; margin:auto; }
+    .content-grid { display:grid; grid-template-columns:minmax(290px,.78fr) minmax(0,1.22fr); gap:16px; margin-top:17px; }
+    .card { background:var(--panel); border:1px solid #dbe9fb; border-radius:18px; padding:23px; box-shadow:0 12px 30px rgba(26,75,128,.055); min-width:0; }
+    .card-title { display:flex; align-items:center; gap:12px; margin:0 0 5px; font-size:19px; letter-spacing:-.3px; }
+    .title-icon { width:39px; height:39px; border-radius:13px; display:grid; place-items:center; color:#1478e9; background:#e7f1ff; font-size:21px; }
+    .sub { margin:0 0 22px 51px; color:#6480a7; font-size:12px; }
+    .dropzone { min-height:215px; border:1.5px dashed #8cbcff; border-radius:14px; background:linear-gradient(145deg,#f8fbff,#edf6ff); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:18px; gap:10px; transition:.2s; }
+    .dropzone.drag { background:#e0f5ff; border-color:#09b9ce; }
+    .upload-symbol { font-size:43px; color:#1676ed; line-height:1; }
+    .dropzone strong { font-size:13px; }
+    .dropzone small { color:#6480a7; font-size:11px; }
+    .choose-btn { border:0; border-radius:30px; color:#fff; padding:12px 25px; min-width:180px; font-size:13px; font-weight:700; background:linear-gradient(100deg,#1769ee,#08b9cc); box-shadow:0 7px 16px #1685df26; }
+    .file-picker-label { display:inline-flex; align-items:center; justify-content:center; position:relative; overflow:hidden; cursor:pointer; }
+    .file-picker-label:focus-within { outline:3px solid #9bcaff; outline-offset:3px; }
+    .file-input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+    .file-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #d4e5fb; background:#f7fbff; border-radius:12px; margin-top:13px; min-width:0; }
+    .file-thumb { width:44px; height:44px; border-radius:8px; background:#e1eaf5; display:grid; place-items:center; overflow:hidden; flex-shrink:0; color:#6b84a5; font-size:22px; }
+    .file-thumb img { width:100%; height:100%; object-fit:cover; }
+    .file-info { min-width:0; flex:1; }
+    .file-info strong { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; }
+    .file-info small { color:#6b84a5; font-size:11px; display:block; margin-top:4px; }
+    .remove-btn { border:0; background:transparent; color:#6e83a1; font-size:20px; padding:4px; }
+    .analyze-btn { width:100%; margin-top:16px; padding:15px; border:0; border-radius:13px; color:white; font-weight:750; background:linear-gradient(100deg,#1452e4,#04c3ad); box-shadow:0 9px 20px #177bda25; }
+    .analyze-btn:disabled { opacity:.55; cursor:not-allowed; }
+    .result-head { display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:1px solid #e2edfa; padding-bottom:14px; margin-bottom:14px; }
+    .result-head .card-title { margin:0; font-size:18px; }
+    .model-tag { font-size:10px; color:#2369bd; border:1px solid #d5e7ff; background:#edf5ff; border-radius:30px; padding:8px 10px; white-space:nowrap; }
+    .result-top { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:14px; }
+    .xray-frame { background:#0b1727; min-height:220px; border-radius:12px; overflow:hidden; display:grid; place-items:center; position:relative; }
+    .xray-frame img { width:100%; height:100%; max-height:260px; object-fit:contain; display:block; }
+    .xray-placeholder { text-align:center; color:#9bb3d0; font-size:12px; padding:20px; line-height:1.7; }
+    .prediction { border:1px solid #ffd9df; border-radius:14px; padding:18px; background:linear-gradient(145deg,#fff9fa,#fff0f2); display:flex; flex-direction:column; justify-content:center; }
+    .pred-label { color:#6d7891; font-size:12px; }
+    .pred-value { color:#c52236; font-size:23px; font-weight:800; margin:5px 0 18px; }
+    .score-line { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-top:5px; }
+    .score-line strong { font-size:27px; color:#15365f; }
+    .meter { height:9px; background:#e6dfe5; border-radius:30px; overflow:hidden; margin:11px 0 13px; }
+    .meter span { display:block; height:100%; width:0; border-radius:30px; background:linear-gradient(90deg,#ff8c8c,#e23e59); transition:width .7s ease; }
+    .confidence-pill { display:inline-flex; align-items:center; gap:6px; align-self:flex-start; border-radius:30px; padding:8px 11px; color:#087f75; background:#def8f3; border:1px solid #b6ece2; font-size:11px; font-weight:700; }
+    .lower-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+    .info-box { border:1px solid #ccefe9; border-radius:14px; padding:16px; background:#f4fcfb; }
+    .info-box.notice { border-color:#d8e8ff; background:#f4f8ff; }
+    .info-box h3 { margin:0 0 12px; font-size:13px; }
+    .info-box p { color:#58739b; font-size:11px; line-height:1.65; margin:0; }
+    .findings { display:grid; gap:10px; }
+    .finding { display:flex; gap:8px; align-items:flex-start; color:#28476f; font-size:11px; line-height:1.45; }
+    .check { width:17px; height:17px; flex-shrink:0; border-radius:50%; background:#10a88f; color:white; display:grid; place-items:center; font-size:10px; }
+    .footer-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:26px 10px 8px; }
+    .stat { display:flex; align-items:center; gap:10px; padding:0 12px; border-right:1px solid #d6e5f7; }
+    .stat:last-child { border:0; }
+    .stat-icon { width:38px; height:38px; border-radius:50%; background:#e1efff; display:grid; place-items:center; font-size:18px; flex-shrink:0; }
+    .stat strong { display:block; font-size:11px; color:#17375f; margin-bottom:4px; }
+    .stat small { color:#6882a5; font-size:10px; line-height:1.4; }
+    .toast { display:none; margin-top:12px; padding:11px 13px; border-radius:10px; font-size:12px; line-height:1.5; color:#744e12; background:#fff5d9; border:1px solid #f4dfa2; }
+    .toast.show { display:block; }
+    .disclaimer { color:#7185a2; font-size:10px; text-align:center; margin:18px 0 0; line-height:1.6; }
+    @media (max-width:1100px) {
+      .app { grid-template-columns:190px minmax(0,1fr); }
+      .main { padding:0 17px 20px; }
+      .hero { padding:27px; }
+      .lung-art { flex-basis:150px; }\n      .lungs-svg { max-width:150px; }
+      .content-grid { grid-template-columns:1fr; }
+      .footer-stats { grid-template-columns:repeat(2,1fr); }
+      .stat:nth-child(2) { border-right:0; }
+    }
+    @media (max-width:680px) {
+      .app { display:block; }
+      .sidebar { padding:13px 14px; gap:13px; }
+      .brand { font-size:16px; }
+      .brand-mark { width:38px; height:38px; }
+      .nav { grid-template-columns:repeat(4,1fr); gap:4px; }
+      .nav a { justify-content:center; flex-direction:column; padding:9px 3px; gap:3px; font-size:10px; }
+      .nav .ico { font-size:17px; }
+      .side-note { display:none; }
+      .topbar { height:52px; }
+      .main { padding:0 12px 18px; }
+      .hero { padding:23px 20px; min-height:0; }
+      .lung-art { display:none; }
+      .hero-points { gap:12px; }
+      .point { flex:1 1 120px; }
+      .card { padding:17px; }
+      .result-top, .lower-grid { grid-template-columns:1fr; }
+      .xray-frame { min-height:200px; }
+      .footer-stats { grid-template-columns:1fr 1fr; padding:22px 0; }
+      .stat { padding:0 4px; border:0; }
+      .stat-icon { width:32px; height:32px; }
+      .result-head { align-items:flex-start; flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">✚</div><span>Pneumonia<em>Detection AI</em></span></div>
+      <nav class="nav" aria-label="Main navigation">
+        <a class="active" href="#home"><span class="ico">⌂</span>Home</a>
+        <a href="#analyze"><span class="ico">▧</span>Analyze</a>
+        <a href="#history"><span class="ico">◷</span>History</a>
+        <a href="#about"><span class="ico">ⓘ</span>About</a>
+      </nav>
+      <div class="side-note"><strong>✚ AI for Better Healthcare</strong>Early screening support<br/>Designed for research and learning</div>
+    </aside>
+
+    <main class="main" id="home">
+      <header class="topbar">
+        <div class="status"><span class="dot"></span>AI Analysis Interface</div>
+        <div class="avatar">◉</div><span style="font-size:13px;font-weight:600">Guest User</span>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">AI POWERED HEALTHCARE</div>
+          <h1>Pneumonia Detection <span>AI</span></h1>
+          <p>Upload a chest X-ray image to explore an AI-assisted pneumonia screening workflow.</p>
+          <div class="hero-points">
+            <div class="point"><span class="point-icon">◎</span><span><b>Fast Workflow</b>Image upload</span></div>
+            <div class="point"><span class="point-icon">♢</span><span><b>Model Powered</b>ML inference</span></div>
+            <div class="point"><span class="point-icon">♡</span><span><b>Better Care</b>Clinician review</span></div>
+          </div>
+        </div>
+        <div class="lung-art" aria-hidden="true">
+          <svg class="lungs-svg" viewBox="0 0 260 230" role="img" aria-label="Illustration of lungs">
+            <defs>
+              <linearGradient id="lungFill" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#43d9ff" stop-opacity=".92"/>
+                <stop offset="100%" stop-color="#1676ed" stop-opacity=".62"/>
+              </linearGradient>
+              <linearGradient id="tubeFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#25d9ed"/>
+                <stop offset="100%" stop-color="#2584ed"/>
+              </linearGradient>
+            </defs>
+            <g stroke="#1688d8" stroke-width="2" opacity=".55" fill="none">
+              <path d="M130 20 V84 M130 61 L106 88 M130 61 L154 88 M106 88 L89 111 M154 88 L171 111"/>
+              <path d="M106 88 L108 118 M154 88 L152 118 M89 111 L72 143 M171 111 L188 143"/>
+              <path d="M108 118 L91 145 M152 118 L169 145 M91 145 L77 170 M169 145 L183 170"/>
+            </g>
+            <path d="M117 27 Q105 21 99 40 L98 72 Q78 76 66 100 C49 129 42 167 56 190 C68 210 91 202 108 186 C123 171 126 145 126 115 L126 49 Q126 33 117 27Z"
+              fill="url(#lungFill)" stroke="#25c9ef" stroke-width="2.5"/>
+            <path d="M143 27 Q155 21 161 40 L162 72 Q182 76 194 100 C211 129 218 167 204 190 C192 210 169 202 152 186 C137 171 134 145 134 115 L134 49 Q134 33 143 27Z"
+              fill="url(#lungFill)" stroke="#25c9ef" stroke-width="2.5"/>
+            <path d="M126 20 Q130 14 134 20 L137 86 L130 101 L123 86Z" fill="url(#tubeFill)" stroke="#51e4f1" stroke-width="2"/>
+            <g fill="none" stroke="#a4f4ff" stroke-width="2" stroke-linecap="round" opacity=".95">
+              <path d="M130 83 L108 105 L93 126 L82 151 M108 105 L111 135 L101 158 M93 126 L72 137"/>
+              <path d="M130 83 L152 105 L167 126 L178 151 M152 105 L149 135 L159 158 M167 126 L188 137"/>
+              <path d="M82 151 L74 173 M101 158 L94 180 M178 151 L186 173 M159 158 L166 180"/>
+            </g>
+            <g fill="#fff" opacity=".9">
+              <circle cx="58" cy="68" r="3"/><circle cx="201" cy="57" r="3"/><circle cx="219" cy="131" r="2.5"/><circle cx="37" cy="145" r="2.5"/>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section class="content-grid" id="analyze">
+        <div class="card">
+          <h2 class="card-title"><span class="title-icon">⇧</span>Upload Chest X-Ray</h2>
+          <p class="sub">Choose an image file from your device</p>
+          <div class="dropzone" id="dropzone">
+            <div class="upload-symbol">⇧</div>
+            <strong>Drag &amp; drop your X-ray image here</strong>
+            <small>or select a file below</small>
+            <label class="choose-btn file-picker-label" for="fileInput">▱ &nbsp; Choose Image
+              <input class="file-input" id="fileInput" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" />
+            </label>
+            <small>Supported: JPG, PNG, WEBP · Max size 10 MB</small>
+          </div>
+          <div class="file-row" id="fileRow" hidden>
+            <div class="file-thumb" id="fileThumb">▧</div>
+            <div class="file-info"><strong id="fileName">No file selected</strong><small id="fileSize"></small></div>
+            <button class="remove-btn" id="removeBtn" type="button" aria-label="Remove selected image">×</button>
+          </div>
+          <button class="analyze-btn" id="analyzeBtn" type="button" disabled>⌁ &nbsp; Analyze X-Ray &nbsp; ›</button>
+          <div class="toast" id="toast" role="status"></div>
+        </div>
+
+        <div class="card">
+          <div class="result-head">
+            <h2 class="card-title"><span class="title-icon">▧</span>Analysis Result</h2>
+            <span class="model-tag">✣ &nbsp; Model: Your trained model</span>
+          </div>
+          <div class="result-top">
+            <div class="xray-frame" id="xrayFrame"><div class="xray-placeholder">Your selected X-ray preview will appear here.</div></div>
+            <div class="prediction">
+              <div class="pred-label">Prediction</div>
+              <div class="pred-value" id="predValue" style="color:#617b9d">Awaiting image</div>
+              <div class="pred-label">Model confidence</div>
+              <div class="score-line"><strong id="scoreValue">—</strong></div>
+              <div class="meter"><span id="meterFill"></span></div>
+              <span class="confidence-pill" id="confidencePill">● &nbsp; Awaiting analysis</span>
+            </div>
+          </div>
+          <div class="lower-grid">
+            <div class="info-box">
+              <h3>▤ &nbsp; Model Output</h3>
+              <div class="findings" id="findings">
+                <div class="finding"><span class="check">✓</span><span>Upload an X-ray and connect your model to display findings.</span></div>
+              </div>
+            </div>
+            <div class="info-box notice" id="about">
+              <h3>♢ &nbsp; Important Notice</h3>
+              <p>This educational interface is not a medical diagnosis. Predictions can be wrong. Please consult a qualified healthcare professional for medical evaluation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="footer-stats" id="history">
+        <div class="stat"><span class="stat-icon">◎</span><span><strong>Model Evaluation</strong><small>Validate on unseen data</small></span></div>
+        <div class="stat"><span class="stat-icon">ϟ</span><span><strong>Quick Workflow</strong><small>Simple image preview</small></span></div>
+        <div class="stat"><span class="stat-icon">⬟</span><span><strong>Privacy Aware</strong><small>Use images responsibly</small></span></div>
+        <div class="stat"><span class="stat-icon">♡</span><span><strong>Human Review</strong><small>Support, not replacement</small></span></div>
+      </section>
+      <p class="disclaimer">For educational and research use only. This page previews images locally in your browser; it does not make a real prediction until connected to your Python model/API.</p>
+    </main>
+  </div>
+
+  <script>
+  const BACKEND = 'http://127.0.0.1:8000/predict';
+
+  const fileInput = document.getElementById('fileInput');
+  const dropzone = document.getElementById('dropzone');
+  const fileRow = document.getElementById('fileRow');
+  const fileThumb = document.getElementById('fileThumb');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
+  const removeBtn = document.getElementById('removeBtn');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const xrayFrame = document.getElementById('xrayFrame');
+  const toast = document.getElementById('toast');
+  const predValue = document.getElementById('predValue');
+  const scoreValue = document.getElementById('scoreValue');
+  const meterFill = document.getElementById('meterFill');
+  const confidencePill = document.getElementById('confidencePill');
+  const findings = document.getElementById('findings');
+
+  let selectedFile = null;
+  let previewUrl = null;
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  ['dragenter','dragover'].forEach(type => dropzone.addEventListener(type, e => {
+    e.preventDefault(); dropzone.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(type => dropzone.addEventListener(type, e => {
+    e.preventDefault(); dropzone.classList.remove('drag');
+  }));
+  dropzone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) setFile(file);
+  });
+
+  removeBtn.addEventListener('click', clearFile);
+  analyzeBtn.addEventListener('click', analyze);
+
+  function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); }
+
+  function setFile(file) {
+    toast.classList.remove('show');
+    if (!file.type.startsWith('image/')) { showToast('Please select a valid image (JPG, PNG, WEBP).'); return; }
+    selectedFile = file;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+
+    fileRow.hidden = false;
+    fileName.textContent = file.name;
+    fileSize.textContent = (file.size / (1024*1024)).toFixed(2) + ' MB';
+    fileThumb.innerHTML = '';
+    const t = document.createElement('img'); t.src = previewUrl; fileThumb.appendChild(t);
+
+    xrayFrame.innerHTML = '';
+    const img = document.createElement('img'); img.src = previewUrl; xrayFrame.appendChild(img);
+
+    analyzeBtn.disabled = false;
+    predValue.textContent = 'Ready to analyze';
+    predValue.style.color = '#1769c2';
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    fileRow.hidden = true;
+    analyzeBtn.disabled = true;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    xrayFrame.innerHTML = '<div class="xray-placeholder">Your selected X-ray preview will appear here.</div>';
+    predValue.textContent = 'Awaiting image';
+    predValue.style.color = '#617b9d';
+    scoreValue.textContent = '—';
+    meterFill.style.width = '0%';
+  }
+
+  async function analyze() {
+    if (!selectedFile) { showToast('Pehle ek X-ray chuno!'); return; }
+
+    analyzeBtn.disabled = true;
+    predValue.textContent = 'Analyzing...';
+    predValue.style.color = '#617b9d';
+    confidencePill.textContent = '●  Analyzing...';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch(BACKEND, { method: 'POST', body: formData });
+      const data = await response.json();
+
+      const isPneumonia = data.prediction === 'Pneumonia';
+
+      predValue.textContent = data.prediction;
+      predValue.style.color = isPneumonia ? '#c52236' : '#0a8f5b';
+
+      scoreValue.textContent = data.confidence + '%';
+
+      meterFill.style.width = data.confidence + '%';
+      meterFill.style.background = isPneumonia
+        ? 'linear-gradient(90deg,#ff8c8c,#e23e59)'
+        : 'linear-gradient(90deg,#7ee2b8,#0a8f5b)';
+
+      confidencePill.textContent = (isPneumonia ? '⚠️  ' : '✅  ') + data.prediction + ' detected';
+
+      findings.innerHTML =
+        '<div class="finding"><span class="check">✓</span><span>Prediction: <b>' + data.prediction + '</b></span></div>' +
+        '<div class="finding"><span class="check">✓</span><span>Confidence: <b>' + data.confidence + '%</b></span></div>';
+
+    } catch (e) {
+      showToast('Backend chal raha hai? Error: ' + e);
+      predValue.textContent = 'Error';
+    } finally {
+      analyzeBtn.disabled = false;
+    }
+  }
+</script>
